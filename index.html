@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PDF Merger</title>
+  <!-- Include PDF-LIB using a CDN link -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+<body>
+  <h1>PDF Merger</h1>
+  <input type="file" id="pdf1" />
+  <input type="file" id="pdf2" />
+  <button onclick="mergePDFs()">Merge PDFs</button>
+  <a id="downloadLink" style="display:none;">Download Merged PDF</a>
+
+  <script>
+    async function mergePDFs() {
+      const pdf1Input = document.getElementById('pdf1').files[0];
+      const pdf2Input = document.getElementById('pdf2').files[0];
+      
+      const pdf1Bytes = await pdf1Input.arrayBuffer();
+      const pdf2Bytes = await pdf2Input.arrayBuffer();
+      
+      const pdfDoc1 = await PDFLib.PDFDocument.load(pdf1Bytes);
+      const pdfDoc2 = await PDFLib.PDFDocument.load(pdf2Bytes);
+      
+      const mergedPdf = await PDFLib.PDFDocument.create();
+      
+      // Copy pages from the first document
+      const [firstPage] = await mergedPdf.copyPages(pdfDoc1, [0]);
+      mergedPdf.addPage(firstPage);
+      
+      const [secondPage] = await mergedPdf.copyPages(pdfDoc1, [1]);
+      mergedPdf.addPage(secondPage);
+      
+      // Add all pages from the second document starting at the third position
+      const pages = await mergedPdf.copyPages(pdfDoc2, pdfDoc2.getPageIndices());
+      pages.forEach(page => mergedPdf.addPage(page));
+      
+      const mergedPdfBytes = await mergedPdf.save();
+      
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      const downloadLink = document.getElementById('downloadLink');
+      downloadLink.href = url;
+      downloadLink.download = 'merged.pdf';
+      downloadLink.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
